@@ -1,14 +1,18 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ImagePickerAsset } from 'expo-image-picker';
 
-// Base URL for the API - update this with your backend URL
-// For local development on a real device, you'll need your computer's local network IP
-// For example: 'http://192.168.1.5:8000' instead of 'http://localhost:8000'
+// Base URL para a API
+// Para Android Emulator, use 10.0.2.2 para acessar o localhost da máquina host
 const API_BASE_URL = 'http://10.0.2.2:8000';
+// Para iOS em dispositivos físicos, você pode precisar usar seu IP local:
+// const API_BASE_URL = 'http://192.168.1.100:8000';
 
+// Chaves de armazenamento
 const API_KEY_STORAGE_KEY = 'GEMINI_USER_API_KEY';
+const AUTH_TOKEN_KEY = 'AUTH_TOKEN';
 
-// Create axios instance with base URL
+// Criar instância do axios
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -16,16 +20,23 @@ const api = axios.create({
   },
 });
 
-// Add a request interceptor to include the API key in headers
+// Adicionar interceptor para incluir API key e token de autenticação
 api.interceptors.request.use(
   async (config) => {
     try {
+      // Adicionar token de autenticação
+      const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      
+      // Adicionar API key se disponível
       const apiKey = await AsyncStorage.getItem(API_KEY_STORAGE_KEY);
       if (apiKey) {
         config.headers['X-API-Key'] = apiKey;
       }
     } catch (error) {
-      console.error('Error retrieving API key:', error);
+      console.error('Error setting request headers:', error);
     }
     return config;
   },
@@ -34,18 +45,18 @@ api.interceptors.request.use(
   }
 );
 
-// API methods
+// Métodos da API
 export const ApiService = {
   // Outfit swap API
-  outfitSwap: async (primaryImage: any, secondaryImage: any, prompt: string) => {
+  outfitSwap: async (primaryImage: ImagePickerAsset, secondaryImage: ImagePickerAsset, prompt: string) => {
     const formData = new FormData();
-    formData.append('primary_image', {
+    formData.append('file', {
       uri: primaryImage.uri,
       name: 'primary_image.jpg',
       type: 'image/jpeg',
     } as any);
     
-    formData.append('secondary_image', {
+    formData.append('secondary_file', {
       uri: secondaryImage.uri,
       name: 'secondary_image.jpg',
       type: 'image/jpeg',
@@ -53,7 +64,7 @@ export const ApiService = {
     
     formData.append('prompt', prompt);
     
-    return api.post('/api/edit-image-dual', formData);
+    return api.post('/api/edit-image/', formData);
   },
   
   // Image generation API
@@ -69,8 +80,14 @@ export const ApiService = {
     return api.post('/api/validate-key/', null, {
       headers: {
         'X-API-Key': apiKey,
+        'Content-Type': 'application/json',
       },
     });
+  },
+  
+  // Verificar status de assinatura e chamadas de API restantes
+  checkUsage: async () => {
+    return api.get('/api/user/usage');
   },
 };
 

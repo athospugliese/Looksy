@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -14,6 +14,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 import Prompt from '../components/Prompt';
 import { useOutfitSwap } from '../hooks/useOutfitSwap';
+import { useAuth } from '../contexts/AuthContext';
+import { ApiService } from '../services/api';
 
 const HomeScreen = ({ navigation }: any) => {
   const {
@@ -32,7 +34,29 @@ const HomeScreen = ({ navigation }: any) => {
     resetForm
   } = useOutfitSwap();
 
+  const { user, isAuthenticated } = useAuth();
+  const [usageInfo, setUsageInfo] = useState<{
+    api_calls_remaining: number | 'unlimited';
+    is_premium: boolean;
+  } | null>(null);
+
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // Carregar informações de uso
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadUsageInfo();
+    }
+  }, [isAuthenticated]);
+
+  const loadUsageInfo = async () => {
+    try {
+      const response = await ApiService.checkUsage();
+      setUsageInfo(response.data);
+    } catch (error) {
+      console.error('Error loading usage info:', error);
+    }
+  };
 
   // Scroll to bottom when result is received
   React.useEffect(() => {
@@ -74,12 +98,80 @@ const HomeScreen = ({ navigation }: any) => {
       Alert.alert('Missing Images', 'Please select both a person image and an outfit image');
       return;
     }
+
+    // Verificar se o usuário está logado
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Login Recomendado',
+        'Para salvar suas transformações e obter acesso premium, faça login primeiro.',
+        [
+          {
+            text: 'Continuar sem login',
+            onPress: () => processImages(),
+          },
+          {
+            text: 'Fazer Login',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
+      return;
+    }
+
+    // Verificar se o usuário tem chamadas de API disponíveis
+    if (
+      usageInfo && 
+      usageInfo.api_calls_remaining !== 'unlimited' && 
+      usageInfo.api_calls_remaining <= 0
+    ) {
+      Alert.alert(
+        'Limite Atingido',
+        'Você atingiu o limite de transformações gratuitas. Faça upgrade para o plano Premium para continuar.',
+        [
+          {
+            text: 'Cancelar',
+            style: 'cancel',
+          },
+          {
+            text: 'Ver Planos',
+            onPress: () => navigation.navigate('Subscription'),
+          },
+        ]
+      );
+      return;
+    }
+
+    // Processar imagens
     await processImages();
+    
+    // Atualizar informações de uso após o processamento
+    if (isAuthenticated) {
+      loadUsageInfo();
+    }
   };
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.container}>
       <ScrollView ref={scrollViewRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Informações de Uso */}
+        {isAuthenticated && usageInfo && (
+          <View style={styles.usageContainer}>
+            <Text style={styles.usageText}>
+              {usageInfo.is_premium 
+                ? 'Plano Premium: Uso Ilimitado' 
+                : `Chamadas restantes: ${usageInfo.api_calls_remaining}`}
+            </Text>
+            {!usageInfo.is_premium && (
+              <TouchableOpacity 
+                style={styles.upgradeButton}
+                onPress={() => navigation.navigate('Subscription')}
+              >
+                <Text style={styles.upgradeButtonText}>UPGRADE</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         <Text style={styles.intro}>
           Upload a person photo and a reference outfit to create a seamless outfit swap
         </Text>
@@ -205,6 +297,30 @@ const HomeScreen = ({ navigation }: any) => {
           <Feather name="image" size={20} color="#666" />
           <Text style={styles.navText}>CREATE</Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navItem} 
+          onPress={() => navigation.navigate('Subscription')}
+        >
+          <Feather name="star" size={20} color="#666" />
+          <Text style={styles.navText}>PREMIUM</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navItem} 
+          onPress={() => {
+            if (isAuthenticated) {
+              navigation.navigate('Profile');
+            } else {
+              navigation.navigate('Login');
+            }
+          }}
+        >
+          <Feather name="user" size={20} color="#666" />
+          <Text style={styles.navText}>
+            {isAuthenticated ? 'PROFILE' : 'LOGIN'}
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -218,6 +334,30 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     padding: 20,
+  },
+  usageContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    padding: 10,
+    borderRadius: 4,
+    marginBottom: 15,
+  },
+  usageText: {
+    fontSize: 12,
+    color: '#333',
+  },
+  upgradeButton: {
+    backgroundColor: '#000',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 4,
+  },
+  upgradeButtonText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '500',
   },
   intro: {
     fontSize: 14,

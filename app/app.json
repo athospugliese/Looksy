@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "meuOutfit",
-    "slug": "meuOutfit",
+    "name": "Looksy",
+    "slug": "Looksy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.Looksy"
     },
     "web": {
       "bundler": "metro",

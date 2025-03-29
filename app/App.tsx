@@ -1,86 +1,88 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { TouchableOpacity } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import { ApiKeyProvider } from './src/contexts/ApiKeyContext';
+import { AuthProvider } from './src/contexts/AuthContext';
 
-// Screens
+// Importar telas
 import HomeScreen from './src/screens/HomeScreen';
 import ImageGeneratorScreen from './src/screens/ImageGeneratorScreen';
 import ApiKeyScreen from './src/screens/ApiKeyScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import SubscriptionScreen from './src/screens/SubscriptionScreen';
 
-// Types
+// Definir tipos para a navegação
 export type RootStackParamList = {
   Home: undefined;
   ImageGenerator: undefined;
   ApiKey: undefined;
+  Login: undefined;
+  Profile: undefined;
+  Subscription: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
-
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        const response = await fetch('http://10.0.2.2:8000');
-        const data = await response.json();
-        console.log('Conexão com o servidor bem-sucedida:', data);
-      } catch (error) {
-        console.error('Erro ao conectar ao servidor:', error);
-      }
-    };
-  
-    testConnection();
-  }, []);
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
+    <SafeAreaProvider>
+      <StatusBar style="dark" />
+      <AuthProvider>
         <ApiKeyProvider>
           <NavigationContainer>
-            <StatusBar style="light" />
             <Stack.Navigator
-              screenOptions={({ navigation }) => ({
-                headerStyle: { backgroundColor: '#000' },
-                headerTintColor: '#fff',
-                headerTitleStyle: { fontWeight: '300', textTransform: 'uppercase', letterSpacing: 2 },
-                contentStyle: { backgroundColor: '#fff' },
-                headerRight: () => (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('ApiKey')}
-                    style={{ paddingHorizontal: 15 }}
-                  >
-                    <Feather name="key" size={20} color="#fff" />
-                  </TouchableOpacity>
-                )
-              })}
+              initialRouteName="Home"
+              screenOptions={{
+                headerShown: true,
+                headerTitleAlign: 'center',
+                headerShadowVisible: false,
+                headerTitleStyle: {
+                  fontWeight: '600',
+                  fontSize: 16,
+                  letterSpacing: 1,
+                },
+                contentStyle: {
+                  backgroundColor: '#fff',
+                },
+              }}
             >
               <Stack.Screen 
                 name="Home" 
                 component={HomeScreen} 
-                options={{ title: 'Outfit Swap' }} 
+                options={{ title: 'OUTFIT SWAP' }}
               />
               <Stack.Screen 
                 name="ImageGenerator" 
                 component={ImageGeneratorScreen} 
-                options={{ title: 'Image Creator' }} 
+                options={{ title: 'GERADOR DE IMAGENS' }}
               />
               <Stack.Screen 
                 name="ApiKey" 
                 component={ApiKeyScreen} 
-                options={{ 
-                  title: 'API Key',
-                  headerRight: undefined 
-                }} 
+                options={{ title: 'CONFIGURAÇÃO DE API KEY' }}
+              />
+              <Stack.Screen 
+                name="Login" 
+                component={LoginScreen} 
+                options={{ title: 'LOGIN' }}
+              />
+              <Stack.Screen 
+                name="Profile" 
+                component={ProfileScreen} 
+                options={{ title: 'PERFIL' }}
+              />
+              <Stack.Screen 
+                name="Subscription" 
+                component={SubscriptionScreen} 
+                options={{ title: 'ASSINATURA' }}
               />
             </Stack.Navigator>
           </NavigationContainer>
         </ApiKeyProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

@@ -1,11 +1,11 @@
 {
-  "name": "meuoutfit",
+  "name": "Looksy",
   "main": "node_modules/expo/AppEntry.js",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "expo lint"
@@ -21,6 +21,7 @@
     "@react-navigation/native-stack": "^7.3.3",
     "axios": "^1.8.4",
     "expo": "~52.0.41",
+    "expo-auth-session": "~6.0.3",
     "expo-blur": "~14.0.3",
     "expo-constants": "~17.0.8",
     "expo-file-system": "^18.0.12",
@@ -35,6 +36,7 @@
     "expo-symbols": "~0.2.2",
     "expo-system-ui": "~4.0.8",
     "expo-web-browser": "~14.0.2",
+    "Looksy": "file:",
     "meuoutfit": "file:",
     "react": "^18.3.1",
     "react-dom": "18.3.1",
